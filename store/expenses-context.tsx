@@ -1,48 +1,17 @@
 import { createContext, ReactNode, useReducer, useState } from "react";
 import { ExpenseItemData } from "../components/ExpensesOutput/ExpensesOutput";
 
-export const DUMMY_EXPENSES: ExpenseItemData[] = [
-    {
-        id: 'e1',
-        description: 'A pair of shoes',
-        ammount: 59.99,
-        date: new Date('2021-12-19')
-    },
-    {
-        id: 'e2',
-        description: 'A pair of trousers',
-        ammount: 89.29,
-        date: new Date('2021-01-05')
-    },
-    {
-        id: 'e3',
-        description: 'Some bananas',
-        ammount: 5.99,
-        date: new Date('2021-12-01')
-    },
-    {
-        id: 'e4',
-        description: 'A book',
-        ammount: 14.99,
-        date: new Date('2021-02-19')
-    },
-    {
-        id: 'e5',
-        description: 'Another book',
-        ammount: 18.59,
-        date: new Date('2022-02-18')
-    }
-]
-
 interface ExpensesContextType {
     expenses: ExpenseItemData[],
-    addExpense: (data: { description?: string, ammount?: number, date?: Date }) => void
+    setExpenses: (expenses: ExpenseItemData[]) => void
+    addExpense: (data: ExpenseItemData) => void
     deleteExpense: (id: string) => void
     updateExpense: (id: string, data: { description?: string, ammount?: number, date?: Date }) => void
 }
 
 export const ExpensesContext = createContext<ExpensesContextType>({
     expenses: [],
+    setExpenses: (data: ExpenseItemData[]) => {},
     addExpense: (data: { description: string, ammount: number, date: Date }) => {},
     deleteExpense: (id: string) => {},
     updateExpense: (id: string, data: { description: string, ammount: number, date: Date }) => {}
@@ -55,7 +24,8 @@ interface ExpensesContextProviderProps {
 type ActionType = 
   | { type: 'ADD'; payload: { description: string, ammount: number, date: Date } }
   | { type: 'UPDATE'; payload: { id: string; data: { description: string, ammount: number, date: Date } } }
-  | { type: 'DELETE'; payload: string };
+  | { type: 'DELETE'; payload: string }
+  | { type: 'SET'; payload: ExpenseItemData[] };
 
 function expensesReducer(state: ExpenseItemData[], action: ActionType) {
     switch (action.type) {
@@ -65,6 +35,9 @@ function expensesReducer(state: ExpenseItemData[], action: ActionType) {
                 id: new Date().toISOString() + Math.random().toString()
               };
               return [newExpense, ...state];
+        case "SET":
+            const reversed = action.payload.reverse()
+            return reversed
         case "UPDATE":
             const updatableExpenseIndex = state.findIndex(
                 (expense) => expense.id === action.payload.id
@@ -82,10 +55,14 @@ function expensesReducer(state: ExpenseItemData[], action: ActionType) {
 }
 
 const ExpensesContextProvider: React.FC<ExpensesContextProviderProps> = ({ children }) => {
-    const [expensesState, dispatch] = useReducer(expensesReducer, DUMMY_EXPENSES)
+    const [expensesState, dispatch] = useReducer(expensesReducer, [])
 
     function addExpense(data: { description: string, ammount: number, date: Date }) {
         dispatch({ type: 'ADD', payload: data })
+    }
+
+    function setExpenses(expenses: ExpenseItemData[]) {
+        dispatch({ type: 'SET', payload: expenses})
     }
 
     function deleteExpense(id: string) { 
@@ -98,6 +75,7 @@ const ExpensesContextProvider: React.FC<ExpensesContextProviderProps> = ({ child
 
     const value: ExpensesContextType = {
         expenses: expensesState,
+        setExpenses: setExpenses,
         addExpense: addExpense,
         deleteExpense: deleteExpense,
         updateExpense: updateExpense
